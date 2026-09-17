@@ -90,3 +90,22 @@ body{
 .login .card p{margin:0 0 12px}
 .login .card button{padding:7px 16px;border:1px solid #ccc;background:#fff;border-radius:4px;cursor:pointer;font-size:13px}
 .login .card button:hover{background:#f2f2f2}
+
+/* PC 위젯(Electron) 전용 */
+html.desktop, html.desktop body{background:transparent}
+html.desktop .widget{border-radius:8px;overflow:hidden}
+html.desktop .top{cursor:move}
+html.desktop.locked .top{cursor:default}
+.grip{display:none;position:absolute;right:0;bottom:0;width:18px;height:18px;cursor:nwse-resize;z-index:5;
+  background:linear-gradient(135deg,transparent 50%,rgba(255,255,255,.5) 50%,rgba(255,255,255,.5) 60%,transparent 60%,transparent 70%,rgba(255,255,255,.5) 70%,rgba(255,255,255,.5) 80%,transparent 80%)}
+html.desktop .grip{display:block}
+html.desktop.locked .grip{display:none}
+.settings input#hkey{width:100%;padding:4px 6px;border:1px solid #ccc;border-radius:3px;font-size:12px;margin-bottom:6px}
+.settings .hint{font-size:11px;color:#777;margin-top:4px;line-height:1.5}
+
+/* 토·일요일 별도 색상 (설정했을 때만) */
+.grid.has-wk .wd.wk{background:rgba(var(--wk-rgb),.75)}
+.grid.has-wk .cell.wk{background:rgba(var(--wk-rgb),var(--bg-alpha))}
+.grid.has-wk .cell.wk:hover{background-image:linear-gradient(rgba(255,255,255,.08),rgba(255,255,255,.08))}
+.grid.has-wk .cell.wk.drop{background-image:linear-gradient(rgba(255,255,255,.22),rgba(255,255,255,.22))}
+.settings .sw.none{background:linear-gradient(135deg,#fff 45%,#e33 46%,#e33 54%,#fff 55%)}

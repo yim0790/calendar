@@ -30,6 +30,7 @@
 
   <div class="grid" id="grid"></div>
   <footer class="foot" id="sync"></footer>
+  <div class="grip" id="grip" title="크기 조절"></div>
 
   <!-- 로그인 안내 (로그인 전·설정 오류 시 표시) -->
   <div class="login" id="loginBox">
@@ -44,7 +45,6 @@
     <div class="eh"><span id="edate"></span><button id="save" type="button" title="저장 (Enter)">✓</button></div>
     <div class="rows" id="rows"></div>
     <div class="pal" id="pal"></div>
-    <div class="tools"><b>Enter = 저장</b> · Shift+Enter = 다음 줄 · Esc = 닫기<br>기호 버튼 = • → ★ → ✔ · ● = 글자색 · □ = 완료<br>빈 줄에서 Backspace = 줄 삭제</div>
   </div>
 
   <!-- 설정창 -->
@@ -55,9 +55,19 @@
     <label>직접 선택 <input type="color" id="picker"></label>
     <label>투명도 <b id="alphaTxt"></b></label>
     <input type="range" id="alpha" min="0" max="95">
+    <label>토·일요일 색상</label>
+    <div class="swatches" id="wswatches"></div>
+    <label>직접 선택 <input type="color" id="wpicker"></label>
     <h4 class="gap">달력 글자색</h4>
     <div class="swatches" id="tswatches"></div>
     <label>직접 선택 <input type="color" id="tpicker"></label>
+    <div id="deskSection" hidden>
+      <h4 class="gap">PC 위젯 · 공휴일</h4>
+      <input id="hkey" type="password" autocomplete="off" placeholder="공공데이터 특일정보 인증키">
+      <div class="acc"><button id="hkeySave" type="button">키 저장</button><button id="hkeyRun" type="button">공휴일 지금 받기</button></div>
+      <div class="hint" id="hkeyMsg"></div>
+      <div class="hint">창 이동: 윗줄 끌기 · 크기: 오른쪽 아래 모서리 · 잠금/자동실행: 작업표시줄 트레이 아이콘</div>
+    </div>
     <h4 class="gap">동기화</h4>
     <div class="acc"><span id="syncState"></span><button id="syncNow" type="button" disabled>지금 동기화</button></div>
     <h4 class="gap">계정</h4>

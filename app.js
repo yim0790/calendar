@@ -5,10 +5,12 @@ import { Store } from "./store.js";
    1. 고정 값
    ===================================================================== */
 const SYMS = ["•", "★", "V"];                          // V는 굵은 체크 모양으로 표시
-const TEXT_PALETTE = ["#FF1A1A", "#0000E6", "#006666", "#5900B2", "#FFFF1A", "#FFFFFF"];
+const TEXT_PALETTE = ["#1AFFFF", "#FFFF1A", "#E60000", "#FF1AFF", "#FF8C1A", "#FFFFFF"];
+// 예전 팔레트 색 — 이미 저장된 일정의 색이 사라지지 않게 표시만 허용 (선택 목록에는 없음)
+const LEGACY_COLORS = ["#FF1A1A", "#0000E6", "#006666", "#5900B2"];
 const ITEM_COLORS = ["", ...TEXT_PALETTE];              // "" = 달력 기본 글자색
 const BG_COLORS = ["#283c50", "#1f2a36", "#3b4d3a", "#4a3b5c", "#5c3b3b", "#6b6b6b", "#ffffff"];
-const DEFAULT_SETTINGS = { bgColor: "#283c50", bgAlpha: 0.38, textColor: "#ffffff" };
+const DEFAULT_SETTINGS = { bgColor: "#283c50", bgAlpha: 0.38, textColor: "#ffffff", weekendColor: "" };   // weekendColor "" = 평일과 같음
 const WD = ["일요일", "월요일", "화요일", "수요일", "목요일", "금요일", "토요일"];
 const CHECK_SVG = `<svg class="chk" viewBox="0 0 16 16" aria-label="체크"><path d="M2 8.5l4 4L14 3.5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
 const HEX = /^#[0-9a-fA-F]{6}$/;
@@ -23,7 +25,7 @@ function cleanItem(it) {
     s: SYMS.includes(it.s) ? it.s : "•",
     t: it.t.trim().slice(0, 200),
     d: it.d === true,
-    c: ITEM_COLORS.includes(it.c) ? it.c : ""
+    c: ITEM_COLORS.includes(it.c) || LEGACY_COLORS.includes(it.c) ? it.c : ""
   };
 }
 function cleanDays(raw) {
@@ -42,6 +44,7 @@ function cleanSettings(raw) {
   if (raw && HEX.test(raw.bgColor)) s.bgColor = raw.bgColor;
   if (raw && typeof raw.bgAlpha === "number" && raw.bgAlpha >= 0.05 && raw.bgAlpha <= 1) s.bgAlpha = raw.bgAlpha;
   if (raw && HEX.test(raw.textColor)) s.textColor = raw.textColor;
+  if (raw && (raw.weekendColor === "" || HEX.test(raw.weekendColor))) s.weekendColor = raw.weekendColor;
   return s;
 }
 function cleanHolidays(raw) {            // { "2026": { days: { "2026-09-25": "추석" } } } → { "2026-09-25": "추석" }
@@ -103,7 +106,7 @@ function render() {
   g.style.gridTemplateRows = `auto repeat(${weeks}, minmax(0, 1fr))`;
   watchRange(key(start), key(new Date(start.getFullYear(), start.getMonth(), start.getDate() + weeks * 7 - 1)));
   const tk = key(today);
-  let html = WD.map(w => `<div class="wd">${w}</div>`).join("");
+  let html = WD.map((w, i) => `<div class="wd${i === 0 || i === 6 ? " wk" : ""}">${w}</div>`).join("");
   for (let i = 0; i < weeks * 7; i++) {
     const d = new Date(start); d.setDate(start.getDate() + i);
     const k = key(d);
@@ -113,7 +116,7 @@ function render() {
       : `<span class="d">${d.getDate()}</span>${hol}`;
     const items = (days[k] || []).map((it, idx) =>
       `<li class="${it.d ? "done" : ""}" data-i="${idx}"${it.c ? ` style="color:${it.c}"` : ""}><span class="sym">${symHtml(it.s)}</span>${esc(it.t)}</li>`).join("");
-    const cls = ["cell", d.getMonth() !== view.getMonth() ? "other" : "", k === tk ? "today" : ""].join(" ").trim();
+    const cls = ["cell", d.getMonth() !== view.getMonth() ? "other" : "", k === tk ? "today" : "", d.getDay() === 0 || d.getDay() === 6 ? "wk" : ""].filter(Boolean).join(" ");
     html += `<div class="${cls}" data-k="${k}">${label}<ul>${items}</ul></div>`;
   }
   g.innerHTML = html;
@@ -133,7 +136,7 @@ function setRowColor(r, c) {
   inp.style.color = c;
   // 흰색·노랑처럼 밝은 색은 흰 편집창에서 안 보이므로 입력칸만 어둡게
   const n = c ? parseInt(c.slice(1), 16) : 0;
-  const light = c && (0.299 * (n >> 16) + 0.587 * ((n >> 8) & 255) + 0.114 * (n & 255)) > 200;
+  const light = c && (0.299 * (n >> 16) + 0.587 * ((n >> 8) & 255) + 0.114 * (n & 255)) > 170;
   inp.style.background = light ? "#555" : "";
 }
 function addRow(it, after) {
@@ -314,6 +317,12 @@ function applySettings() {
   rootStyle.setProperty("--sub", `rgba(${rgb(settings.textColor)},.75)`);
   $("picker").value = settings.bgColor.toLowerCase();
   $("tpicker").value = settings.textColor.toLowerCase();
+  $("grid").classList.toggle("has-wk", !!settings.weekendColor);
+  if (settings.weekendColor) {
+    rootStyle.setProperty("--wk-rgb", rgb(settings.weekendColor));
+    $("wpicker").value = settings.weekendColor.toLowerCase();
+  }
+  document.querySelectorAll("#wswatches .sw").forEach(s => s.classList.toggle("on", s.dataset.c.toLowerCase() === settings.weekendColor.toLowerCase()));
   const pct = Math.round((1 - settings.bgAlpha) * 100);    // 화면에는 '투명도 %'로 표시
   $("alpha").value = pct; $("alphaTxt").textContent = pct + "%";
   document.querySelectorAll("#swatches .sw").forEach(s => s.classList.toggle("on", s.dataset.c.toLowerCase() === settings.bgColor.toLowerCase()));
@@ -327,6 +336,13 @@ function changeSettings(patch) {
 const swatchHtml = list => list.map(c => `<span class="sw" data-c="${c}" style="background:${c}" title="${c}"></span>`).join("");
 $("swatches").innerHTML = swatchHtml(BG_COLORS);
 $("tswatches").innerHTML = swatchHtml(TEXT_PALETTE);
+// 토·일요일 색상: 첫 칸 = 없음(평일과 같음)
+const WEEKEND_COLORS = ["", "#5c3b3b", "#7a2e2e", "#3b4d6b", "#4a3b5c", "#3b4d3a", "#6b6b6b"];
+$("wswatches").innerHTML = WEEKEND_COLORS.map(c => c
+  ? `<span class="sw" data-c="${c}" style="background:${c}" title="${c}"></span>`
+  : `<span class="sw none" data-c="" title="없음 (평일과 같음)"></span>`).join("");
+$("wswatches").onclick = e => { if (e.target.classList.contains("sw")) changeSettings({ weekendColor: e.target.dataset.c }); };
+$("wpicker").onchange = e => changeSettings({ weekendColor: e.target.value });
 $("swatches").onclick = e => { if (e.target.dataset.c) changeSettings({ bgColor: e.target.dataset.c }); };
 $("tswatches").onclick = e => { if (e.target.dataset.c) changeSettings({ textColor: e.target.dataset.c }); };
 $("picker").onchange = e => changeSettings({ bgColor: e.target.value });
@@ -368,11 +384,72 @@ async function doSignIn() {
       "auth/cancelled-popup-request": "로그인 창이 닫혔어요. 다시 눌러주세요.",
       "auth/unauthorized-domain": "이 주소가 Firebase 승인 도메인에 없어요. Firebase 콘솔 > Authentication > 설정 > 승인된 도메인에 추가해 주세요.",
       "auth/network-request-failed": "인터넷 연결을 확인해 주세요."
-    }[err.code] || `로그인 실패 (${err.code || err.message})`;
+    }[err.code] || (err.code ? `로그인 실패 (${err.code})` : cleanErr(err));
     $("loginMsg").textContent = msg;
   }
 }
+/* ---------- PC 위젯(Electron)에서만 동작하는 부분 ---------- */
+const desktop = window.calendarDesktop || null;
+let holidayDocs = {}, lastHolidaySync = 0, deskLoginReady = true;
+const cleanErr = e => String(e?.message || e).replace(/^Error invoking remote method '[^']+': (Error: )?/, "");
+async function syncHolidays(force) {
+  if (!desktop || !user) return;
+  if (!force && Date.now() - lastHolidaySync < 6 * 3600 * 1000) return;
+  const st = await desktop.getState();
+  if (!st.hasHolidayKey) { $("hkeyMsg").textContent = "인증키를 넣으면 공휴일이 표시돼요."; return; }
+  $("hkeyMsg").textContent = "공휴일 받는 중…";
+  try {
+    const y = today.getFullYear();
+    const got = await desktop.fetchHolidays([y, y + 1]);
+    let changed = 0;
+    for (const year in got) {
+      const days = got[year];
+      if (!Object.keys(days).length) continue;                  // 아직 발표 전인 해는 건너뜀
+      const before = JSON.stringify(holidayDocs[year]?.days || {});
+      if (before !== JSON.stringify(days)) { await Store.saveHolidays(year, days); changed++; }
+    }
+    lastHolidaySync = Date.now();
+    const n = new Date();
+    $("hkeyMsg").textContent = `공휴일 확인 완료 ${pad(n.getHours())}:${pad(n.getMinutes())}` + (changed ? ` (${changed}개 연도 갱신)` : "");
+  } catch (e) {
+    $("hkeyMsg").textContent = "⚠ " + cleanErr(e);
+  }
+}
+if (desktop) {
+  document.documentElement.classList.add("desktop");
+  $("deskSection").hidden = false;
+  desktop.getState().then(st => {
+    document.documentElement.classList.toggle("locked", st.locked);
+    if (st.hasHolidayKey) $("hkey").placeholder = "저장된 인증키 있음 (바꿀 때만 입력)";
+    deskLoginReady = st.loginReady;
+    if (!st.loginReady && $("loginBox").style.display === "flex") showLogin(true);
+  });
+  desktop.onLockChanged(locked => document.documentElement.classList.toggle("locked", locked));
+  $("hkeySave").onclick = async () => {
+    const v = $("hkey").value.trim();
+    if (!v) { $("hkeyMsg").textContent = "인증키를 입력해 주세요."; return; }
+    await desktop.setHolidayKey(v);
+    $("hkey").value = ""; $("hkey").placeholder = "저장된 인증키 있음 (바꿀 때만 입력)";
+    syncHolidays(true);
+  };
+  $("hkeyRun").onclick = () => syncHolidays(true);
+  setInterval(() => syncHolidays(false), 30 * 60 * 1000);     // 30분마다 확인, 실제 호출은 6시간 간격
+  // 오른쪽 아래 손잡이로 창 크기 조절
+  let rs = null, raf = 0;
+  $("grip").addEventListener("pointerdown", e => {
+    rs = { x: e.screenX, y: e.screenY, w: window.outerWidth, h: window.outerHeight };
+    $("grip").setPointerCapture(e.pointerId);
+    e.preventDefault();
+  });
+  $("grip").addEventListener("pointermove", e => {
+    if (!rs || raf) return;
+    raf = requestAnimationFrame(() => { raf = 0; if (rs) desktop.resizeTo(rs.w + e.screenX - rs.x, rs.h + e.screenY - rs.y); });
+  });
+  $("grip").addEventListener("pointerup", () => { rs = null; });
+}
+
 function showLogin(show, msg) {
+  if (show && desktop && !deskLoginReady) msg = "PC 로그인 설정값이 비어 있어요. 설치 폴더의 app-config.json에 googleClientId / googleClientSecret을 넣고 다시 실행해 주세요.";
   $("loginBox").style.display = show ? "flex" : "none";
   $("loginMsg").textContent = msg || "";
 }
@@ -385,7 +462,7 @@ if (Store.configError) {                        // 설정값이 잘못되면 여
   Store.onAuth(u => {
     user = u;
     stopWatching();
-    days = {}; holidays = {}; lastSavedAt = null;
+    days = {}; holidays = {}; holidayDocs = {}; lastSavedAt = null; lastHolidaySync = 0;
     if (!u) { settings = cleanSettings({}); applySettings(); }   // 로그아웃하면 이전 계정 설정 지움
     if (editorOpen()) closeEditor();
     $("accName").textContent = u ? (u.email || "로그인됨") : "로그인 안 됨";
@@ -395,7 +472,8 @@ if (Store.configError) {                        // 설정값이 잘못되면 여
     showLogin(!u, "일정을 PC·폰에서 함께 보려면 구글 계정으로 로그인해 주세요.");
     if (u) {
       unsubSettings = Store.watchSettings(raw => { settings = cleanSettings(raw); applySettings(); });
-      unsubHolidays = Store.watchHolidays(raw => { holidays = cleanHolidays(raw); if (!editorOpen()) render(); });
+      unsubHolidays = Store.watchHolidays(raw => { holidayDocs = raw; holidays = cleanHolidays(raw); if (!editorOpen()) render(); });
+      if (desktop) setTimeout(() => syncHolidays(true), 3000);   // 로그인 직후 공휴일 확인
     }
     render();
     showSync();
