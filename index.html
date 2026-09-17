@@ -41,8 +41,9 @@
   </div>
 
   <!-- 날짜 편집창 -->
+  <div class="ed-back" id="edBack"></div>
   <div class="editor" id="editor" role="dialog" aria-label="일정 편집">
-    <div class="eh"><span id="edate"></span><button id="save" type="button" title="저장 (Enter)">✓</button></div>
+    <div class="eh"><span id="edate"></span><button id="addLine" class="m-only" type="button">＋ 줄</button><button id="save" type="button" title="저장 (Enter)">✓</button></div>
     <div class="rows" id="rows"></div>
     <div class="pal" id="pal"></div>
   </div>
@@ -72,6 +73,7 @@
     <div class="acc"><span id="syncState"></span><button id="syncNow" type="button" disabled>지금 동기화</button></div>
     <h4 class="gap">계정</h4>
     <div class="acc"><span id="accName"></span><button id="login" type="button" disabled>구글 로그인</button></div>
+    <button class="close" id="reloadApp" type="button">화면 새로고침 (F5)</button>
     <button class="close" id="closeSet" type="button">닫기</button>
   </div>
 </div>

@@ -97,8 +97,17 @@ function showSync(st) {                  // 하단 문구 + 설정창 동기화 
 /* =====================================================================
    4. 달력 그리기
    ===================================================================== */
+/* 폰 화면 여부 (PC 위젯은 항상 PC 화면) — 폰은 편집창을 아래에서 올라오는 창으로 */
+const mobileMQ = matchMedia("(max-width: 700px), (pointer: coarse)");
+const isMobile = () => !window.calendarDesktop && mobileMQ.matches;
+function applyMode() { document.documentElement.classList.toggle("mobile", isMobile()); }
+applyMode();
+mobileMQ.addEventListener("change", () => { applyMode(); render(); });
+
 function render() {
-  $("title").textContent = `오늘은 ${today.getFullYear()}년${today.getMonth() + 1}월${today.getDate()}일 ${WD[today.getDay()]}`;
+  $("title").textContent = isMobile()
+    ? `${today.getMonth() + 1}/${today.getDate()}(${WD[today.getDay()][0]})`
+    : `오늘은 ${today.getFullYear()}년${today.getMonth() + 1}월${today.getDate()}일 ${WD[today.getDay()]}`;
   const g = $("grid");
   const start = new Date(view); start.setDate(1 - view.getDay());
   const last = new Date(view.getFullYear(), view.getMonth() + 1, 0);
@@ -158,6 +167,13 @@ function openEditor(cell) {
   $("rows").innerHTML = "";
   (days[editing] || []).forEach(it => addRow(it));
   const blank = addRow({ s: "•", t: "", d: false, c: "" });
+  if (isMobile()) {                          // 폰: 화면 아래 고정 창 + 뒤 배경 누르면 저장·닫기
+    ed.style.left = ed.style.top = "";
+    ed.style.display = "block";
+    $("edBack").style.display = "block";
+    if (!(days[editing] || []).length) blank.querySelector("input[type=text]").focus();   // 빈 날짜만 바로 키보드
+    return;
+  }
   // 칸 옆에 띄우되 위젯 밖으로 나가지 않게
   const w = $("widget").getBoundingClientRect(), r = cell.getBoundingClientRect();
   const W = 250, H = 300;
@@ -169,7 +185,7 @@ function openEditor(cell) {
   blank.querySelector("input[type=text]").focus();
 }
 function closeEditor() {
-  ed.style.display = "none"; $("pal").style.display = "none";
+  ed.style.display = "none"; $("pal").style.display = "none"; $("edBack").style.display = "none";
   editing = null; palRow = null;
 }
 function saveEditor() {
@@ -187,6 +203,12 @@ function saveEditor() {
 }
 
 $("save").onclick = saveEditor;
+$("edBack").addEventListener("click", saveEditor);
+$("addLine").onclick = () => {             // 폰: Shift+Enter 대신 줄 추가 버튼
+  const rows = $("rows").children, last = rows[rows.length - 1];
+  const empty = last && !last.querySelector("input[type=text]").value.trim();
+  (empty ? last : addRow({ s: "•", t: "", d: false, c: "" })).querySelector("input[type=text]").focus();
+};
 $("pal").innerHTML = ITEM_COLORS.map(c =>
   `<span data-c="${c}" class="${c ? "" : "def"}" title="${c || "기본색"}" style="${c ? `background:${c}` : ""}"></span>`).join("");
 $("pal").onclick = e => {
@@ -200,9 +222,9 @@ $("rows").addEventListener("click", e => {
   if (cb) {                                  // 글자색 팔레트 열기
     const pal = $("pal"), rr = cb.getBoundingClientRect(), er = ed.getBoundingClientRect();
     palRow = cb.closest(".row");
-    pal.style.left = Math.max(0, Math.min(rr.left - er.left - 60, er.width - 180)) + "px";
+    pal.style.display = "flex";                // 먼저 띄워서 실제 너비를 잰 뒤 편집창 안으로 맞춤
+    pal.style.left = Math.max(4, Math.min(rr.left - er.left - 60, er.width - pal.offsetWidth - 4)) + "px";
     pal.style.top = (rr.bottom - er.top + 2) + "px";
-    pal.style.display = "flex";
     return;
   }
   const sb = e.target.closest(".sb");
@@ -354,6 +376,12 @@ $("alpha").oninput = e => {                  // 끄는 동안은 화면만, 손�
 $("alpha").onchange = e => changeSettings({ bgAlpha: (100 - e.target.value) / 100 });
 $("menu").onclick = () => { const s = $("settings"); s.style.display = s.style.display === "block" ? "none" : "block"; };
 $("closeSet").onclick = () => ($("settings").style.display = "none");
+// 새 버전 반영용 새로고침 (편집 중이면 저장 먼저)
+function reloadApp() { if (editorOpen()) saveEditor(); setTimeout(() => location.reload(), 300); }
+$("reloadApp").onclick = reloadApp;
+document.addEventListener("keydown", e => {
+  if (e.key === "F5" || (e.ctrlKey && (e.key === "r" || e.key === "R"))) { e.preventDefault(); reloadApp(); }
+});
 $("syncNow").onclick = () => Store.syncNow();
 $("login").onclick = () => (user ? Store.signOut() : doSignIn());
 $("loginBtn").onclick = doSignIn;

@@ -109,3 +109,28 @@ html.desktop.locked .grip{display:none}
 .grid.has-wk .cell.wk:hover{background-image:linear-gradient(rgba(255,255,255,.08),rgba(255,255,255,.08))}
 .grid.has-wk .cell.wk.drop{background-image:linear-gradient(rgba(255,255,255,.22),rgba(255,255,255,.22))}
 .settings .sw.none{background:linear-gradient(135deg,#fff 45%,#e33 46%,#e33 54%,#fff 55%)}
+
+/* ---------- 폰 화면 전용 ---------- */
+.m-only{display:none}
+.ed-back{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9}
+html.mobile .top{justify-content:flex-start;padding-left:10px}
+html.mobile .cell{padding:2px 3px;font-size:11px}
+html.mobile .cell li{touch-action:none}           /* 길게 끌어 옮기기 */
+html.mobile .wd{font-size:11px}
+html.mobile .editor{position:fixed;left:0 !important;right:0;bottom:0;top:auto !important;width:auto;border-radius:14px 14px 0 0;
+  padding-bottom:env(safe-area-inset-bottom);box-shadow:0 -4px 20px rgba(0,0,0,.4)}
+html.mobile .editor .eh{margin:10px 8px 4px;padding:6px 8px;font-size:15px;gap:8px}
+html.mobile .editor .eh span{flex:1}
+html.mobile .m-only{display:inline-block}
+html.mobile .editor .eh button{width:auto;height:36px;min-width:44px;padding:0 12px;font-size:15px;border-radius:6px}
+html.mobile #save{background:#1aa3e8;color:#fff;border-color:#1aa3e8}
+html.mobile .rows{height:auto;max-height:45vh;padding:4px 10px 12px}
+html.mobile .row{gap:8px;margin-bottom:6px}
+html.mobile .row input[type=text]{font-size:16px;padding:8px 4px}   /* 16px 미만이면 아이폰이 확대함 */
+html.mobile .row .sb{width:36px;height:36px;font-size:16px}
+html.mobile .row .cb{width:28px;height:28px}
+html.mobile .row input[type=checkbox]{width:24px;height:24px}
+html.mobile .chk{width:14px;height:14px}
+html.mobile .pal span{width:30px;height:30px}
+html.mobile .pal{gap:8px;padding:8px}
+html.mobile .settings{position:fixed;left:8px;right:8px;width:auto;top:44px}
