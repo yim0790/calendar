@@ -125,6 +125,9 @@ export const Store = {
     }
     return track(batch.commit());
   },
+  saveHolidays(year, days) {                  // PC 위젯이 받은 공휴일 저장
+    return track(setDoc(doc(db, userPath("holidays", String(year))), { days, updatedAt: serverTimestamp() }));
+  },
   saveSettings(s) {
     return track(setDoc(doc(db, userPath("settings", "widget")), { ...s, updatedAt: serverTimestamp() }));
   },
