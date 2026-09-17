@@ -12,6 +12,7 @@ const ITEM_COLORS = ["", ...TEXT_PALETTE];              // "" = 달력 기본 �
 const BG_COLORS = ["#283c50", "#1f2a36", "#3b4d3a", "#4a3b5c", "#5c3b3b", "#6b6b6b", "#ffffff"];
 const DEFAULT_SETTINGS = { bgColor: "#283c50", bgAlpha: 0.38, textColor: "#ffffff", weekendColor: "" };   // weekendColor "" = 평일과 같음
 const WD = ["일요일", "월요일", "화요일", "수요일", "목요일", "금요일", "토요일"];
+const TRASH_SVG = `<svg viewBox="0 0 24 24" aria-hidden="true" width="14" height="14"><path d="M4 7h16M10 4h4M9 7v11M15 7v11M6 7l1 13h10l1-13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>`;
 const CHECK_SVG = `<svg class="chk" viewBox="0 0 16 16" aria-label="체크"><path d="M2 8.5l4 4L14 3.5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
 const HEX = /^#[0-9a-fA-F]{6}$/;
 
@@ -151,7 +152,7 @@ function setRowColor(r, c) {
 function addRow(it, after) {
   const r = document.createElement("div");
   r.className = "row" + (it.d ? " done" : "");
-  r.innerHTML = `<button class="sb" type="button" title="기호 바꾸기"></button><input type="text" maxlength="200"><button class="cb" type="button" title="글자색"></button><input type="checkbox" title="완료">`;
+  r.innerHTML = `<button class="sb" type="button" title="기호 바꾸기"></button><input type="text" maxlength="200"><button class="cb" type="button" title="글자색"></button><input type="checkbox" title="완료"><button class="del" type="button" title="이 줄 삭제">${TRASH_SVG}</button>`;
   const sb = r.querySelector(".sb"); sb.dataset.s = it.s; sb.innerHTML = symHtml(it.s);
   r.querySelector("input[type=text]").value = it.t;
   r.querySelector("input[type=checkbox]").checked = it.d;
@@ -164,7 +165,7 @@ function openEditor(cell) {
   editing = cell.dataset.k;
   const [y, m, d] = editing.split("-").map(Number);
   $("edate").textContent = `${y}년 ${m}월 ${d}일`;
-  $("rows").innerHTML = "";
+  $("rows").innerHTML = ""; hideUndo();
   (days[editing] || []).forEach(it => addRow(it));
   const blank = addRow({ s: "•", t: "", d: false, c: "" });
   if (isMobile()) {                          // 폰: 화면 아래 고정 창 + 뒤 배경 누르면 저장·닫기
@@ -185,6 +186,7 @@ function openEditor(cell) {
   blank.querySelector("input[type=text]").focus();
 }
 function closeEditor() {
+  hideUndo();
   ed.style.display = "none"; $("pal").style.display = "none"; $("edBack").style.display = "none";
   editing = null; palRow = null;
 }
@@ -217,7 +219,34 @@ $("pal").onclick = e => {
   $("pal").style.display = "none";
   palRow.querySelector("input[type=text]").focus();
 };
+/* 줄 삭제 + 되돌리기 (저장은 ✓/Enter를 눌러야 최종 반영) */
+let undoData = null, undoTimer = null;
+function showUndo(msg) {
+  $("undoMsg").textContent = msg;
+  $("undoBar").style.display = "flex";
+  clearTimeout(undoTimer);
+  undoTimer = setTimeout(hideUndo, 8000);
+}
+function hideUndo() { $("undoBar").style.display = "none"; undoData = null; clearTimeout(undoTimer); }
+$("undoBtn").onclick = () => {
+  if (!undoData) return;
+  const r = addRow(undoData.item);
+  const rows = $("rows");
+  if (undoData.at < rows.children.length - 1) rows.insertBefore(r, rows.children[undoData.at]);
+  hideUndo();
+};
 $("rows").addEventListener("click", e => {
+  const del = e.target.closest(".del");
+  if (del) {                                 // 그 줄만 삭제 (8초 안에 되돌리기 가능)
+    const row = del.closest(".row"), rows = $("rows");
+    const item = { s: row.querySelector(".sb").dataset.s, t: row.querySelector("input[type=text]").value,
+                   d: row.querySelector("input[type=checkbox]").checked, c: row.dataset.c || "" };
+    undoData = { item, at: [...rows.children].indexOf(row) };
+    row.remove();
+    if (!rows.children.length) addRow({ s: "•", t: "", d: false, c: "" });   // 최소 한 줄은 남김
+    showUndo(item.t.trim() ? `"${item.t.trim().slice(0, 12)}" 삭제됨` : "빈 줄 삭제됨");
+    return;
+  }
   const cb = e.target.closest(".cb");
   if (cb) {                                  // 글자색 팔레트 열기
     const pal = $("pal"), rr = cb.getBoundingClientRect(), er = ed.getBoundingClientRect();
