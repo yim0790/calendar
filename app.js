@@ -5,9 +5,9 @@ import { Store } from "./store.js";
    1. 고정 값
    ===================================================================== */
 const SYMS = ["•", "★", "V"];                          // V는 굵은 체크 모양으로 표시
-const TEXT_PALETTE = ["#1AFFFF", "#FFFF1A", "#E60000", "#FF1AFF", "#FF8C1A", "#FFFFFF"];
+const TEXT_PALETTE = ["#1AFFFF", "#FFFF1A", "#A3FF4D", "#FFA8DB", "#FF8C1A", "#FFFFFF"];
 // 예전 팔레트 색 — 이미 저장된 일정의 색이 사라지지 않게 표시만 허용 (선택 목록에는 없음)
-const LEGACY_COLORS = ["#FF1A1A", "#0000E6", "#006666", "#5900B2"];
+const LEGACY_COLORS = ["#FF1A1A", "#0000E6", "#006666", "#5900B2", "#E60000", "#FF1AFF"];
 const ITEM_COLORS = ["", ...TEXT_PALETTE];              // "" = 달력 기본 글자색
 const BG_COLORS = ["#283c50", "#1f2a36", "#3b4d3a", "#4a3b5c", "#5c3b3b", "#6b6b6b", "#ffffff"];
 const DEFAULT_SETTINGS = { bgColor: "#283c50", bgAlpha: 0.38, textColor: "#ffffff", weekendColor: "" };   // weekendColor "" = 평일과 같음
