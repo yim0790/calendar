@@ -1,0 +1,57 @@
+<!-- 카카오 로그인 후 받은 인가 코드를 크게 보여주고 복사하게 해주는 페이지 (토큰 발급 1회용) -->
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>카카오 인가 코드</title>
+<style>
+  body{font-family:"Malgun Gothic","맑은 고딕",sans-serif;background:#f5f6f8;color:#222;
+       margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+  .card{background:#fff;border-radius:10px;box-shadow:0 4px 20px rgba(0,0,0,.12);padding:28px;max-width:560px;width:100%}
+  h1{font-size:18px;margin:0 0 6px}
+  p{font-size:13px;color:#555;line-height:1.7;margin:0 0 16px}
+  .code{font-family:Consolas,monospace;font-size:15px;word-break:break-all;background:#f0f2f5;
+        border:1px solid #dde0e5;border-radius:6px;padding:14px;user-select:all}
+  button{margin-top:14px;padding:10px 18px;font-size:14px;border:0;border-radius:6px;
+         background:#1aa3e8;color:#fff;cursor:pointer}
+  button:hover{background:#1590cf}
+  .err{color:#c0392b}
+  .ok{color:#1b8a3a;font-size:13px;margin-top:10px;min-height:18px}
+</style>
+</head>
+<body>
+<div class="card">
+  <h1>카카오 인가 코드</h1>
+  <p id="msg"></p>
+  <div class="code" id="code"></div>
+  <button id="copy" type="button">코드 복사</button>
+  <div class="ok" id="done"></div>
+</div>
+<script>
+  var code = new URLSearchParams(location.search).get("code");
+  var err = new URLSearchParams(location.search).get("error_description")
+         || new URLSearchParams(location.search).get("error");
+  var $ = function (id) { return document.getElementById(id); };
+
+  if (code) {
+    $("msg").textContent = "아래 코드를 복사해서 실행 중인 '카카오_토큰받기' 창에 붙여넣어 주세요. 이 코드는 몇 분 안에 만료되니 바로 쓰셔야 해요.";
+    $("code").textContent = code;
+  } else {
+    $("msg").innerHTML = '<span class="err">인가 코드를 받지 못했어요.</span> 리다이렉트 URI가 카카오 앱 설정에 등록돼 있는지, 동의 화면에서 모두 동의했는지 확인해 주세요.';
+    $("code").textContent = err || "(코드 없음)";
+    $("copy").style.display = "none";
+  }
+
+  $("copy").onclick = function () {
+    var show = function (t) { $("done").textContent = t; };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(code).then(function () { show("복사했어요."); },
+                                               function () { show("복사가 안 됐어요. 코드를 직접 선택해서 복사해 주세요."); });
+    } else {
+      show("이 브라우저에서는 자동 복사가 안 돼요. 코드를 직접 선택해서 복사해 주세요.");
+    }
+  };
+</script>
+</body>
+</html>

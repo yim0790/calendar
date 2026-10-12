@@ -86,6 +86,11 @@ body{
 .settings .acc button{padding:3px 8px;border:1px solid #ccc;background:#f5f5f5;border-radius:3px;cursor:pointer;font-size:12px}
 .settings .acc button:disabled{cursor:default;color:#aaa}
 #syncState{color:#777}
+.settings .uid{display:flex;align-items:center;gap:5px;margin-top:5px;font-size:11px;color:#777}
+.settings .uid[hidden]{display:none}   /* hidden 속성이 display:flex에 밀리지 않게 */
+.settings .uid code{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  background:#f2f3f5;border-radius:3px;padding:2px 4px;font-size:11px;user-select:all}
+.settings .uid button{padding:2px 7px;border:1px solid #ccc;background:#f5f5f5;border-radius:3px;cursor:pointer;font-size:11px;flex:none}
 .settings .close{margin-top:10px;width:100%;padding:5px;border:1px solid #ccc;background:#f5f5f5;border-radius:3px;cursor:pointer}
 
 /* 로그인 안내 */
@@ -138,6 +143,8 @@ html.mobile .chk{width:14px;height:14px}
 html.mobile .pal span{width:30px;height:30px}
 html.mobile .pal{gap:8px;padding:8px}
 html.mobile .settings{position:fixed;left:8px;right:8px;width:auto;top:44px}
+html.mobile .settings .uid{font-size:13px}
+html.mobile .settings .uid button{padding:6px 12px;font-size:13px}
 html.mobile .row .del{width:38px;height:38px}
 html.mobile .row .del svg{width:18px;height:18px}
 html.mobile .undo{font-size:14px;padding:10px 12px;margin:0 10px 10px}

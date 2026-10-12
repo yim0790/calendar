@@ -413,6 +413,13 @@ document.addEventListener("keydown", e => {
 });
 $("syncNow").onclick = () => Store.syncNow();
 $("login").onclick = () => (user ? Store.signOut() : doSignIn());
+$("uidCopy").onclick = () => {
+  const t = $("uidVal").textContent;
+  if (!t) return;
+  const done = ok => { $("uidCopy").textContent = ok ? "복사됨" : "실패"; setTimeout(() => ($("uidCopy").textContent = "복사"), 1500); };
+  if (navigator.clipboard?.writeText) navigator.clipboard.writeText(t).then(() => done(true), () => done(false));
+  else done(false);
+};
 $("loginBtn").onclick = doSignIn;
 
 /* =====================================================================
@@ -523,6 +530,8 @@ if (Store.configError) {                        // 설정값이 잘못되면 여
     if (!u) { settings = cleanSettings({}); applySettings(); }   // 로그아웃하면 이전 계정 설정 지움
     if (editorOpen()) closeEditor();
     $("accName").textContent = u ? (u.email || "로그인됨") : "로그인 안 됨";
+    $("uidRow").hidden = !u;                    // 카톡 발송 설정에 넣을 값 (GitHub Secret CAL_UID)
+    $("uidVal").textContent = u ? u.uid : "";
     $("login").textContent = u ? "로그아웃" : "구글 로그인";
     $("login").disabled = false;
     $("syncNow").disabled = !u;
