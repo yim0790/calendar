@@ -26,6 +26,10 @@ body{
 /* 윗줄 (PC 위젯에서는 이 줄을 잡고 창 이동) */
 .top{flex:none;display:flex;align-items:center;justify-content:center;position:relative;height:36px;font-size:13px;-webkit-app-region:drag}
 .top .nav{position:absolute;right:8px;display:flex;gap:4px;-webkit-app-region:no-drag}
+/* 가운데: [이전달] 2026년 11월 [다음달] — 글자 부분은 창 이동용으로 남겨둠 */
+.top .mon{display:flex;align-items:center;gap:2px}
+.top .mon button{-webkit-app-region:no-drag}
+.top .mon #title{min-width:86px;text-align:center;white-space:nowrap}
 .top button{background:none;border:0;color:var(--text);font-size:15px;width:28px;height:28px;cursor:pointer;border-radius:4px;padding:0;display:flex;align-items:center;justify-content:center}
 .top button:hover{background:rgba(255,255,255,.15)}
 .top .ico{width:18px;height:18px}
@@ -122,7 +126,8 @@ html.desktop.locked .grip{display:none}
 /* ---------- 폰 화면 전용 ---------- */
 .m-only{display:none}
 .ed-back{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9}
-html.mobile .top{justify-content:flex-start;padding-left:10px}
+html.mobile .top{justify-content:center;padding-left:0}
+html.mobile .top .mon #title{min-width:78px;font-size:13px}
 html.mobile .cell{padding:2px 3px;font-size:11px}
 html.mobile .cell li{touch-action:none}           /* 길게 끌어 옮기기 */
 html.mobile .wd{font-size:11px}

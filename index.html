@@ -17,13 +17,15 @@
 <body>
 <div class="widget" id="widget">
   <header class="top">
-    <span id="title"></span>
+    <div class="mon">
+      <button id="prev" type="button" title="이전 달" aria-label="이전 달">←</button>
+      <span id="title"></span>
+      <button id="next" type="button" title="다음 달" aria-label="다음 달">→</button>
+    </div>
     <div class="nav">
       <button id="today" type="button" title="오늘 달로 이동" aria-label="오늘 달로 이동">
         <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><defs><mask id="ringGap"><rect width="24" height="24" fill="#fff"/><rect x="5.6" y="0" width="4.3" height="7.6" rx="2.1" fill="#000"/><rect x="14.1" y="0" width="4.3" height="7.6" rx="2.1" fill="#000"/></mask></defs><g mask="url(#ringGap)"><rect x="2.6" y="3.8" width="18.8" height="18" rx="3.6" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="M2.6 7.4a3.6 3.6 0 0 1 3.6-3.6h11.6a3.6 3.6 0 0 1 3.6 3.6V9.4H2.6z" fill="currentColor"/></g><rect x="6.6" y="0.8" width="2.3" height="5.6" rx="1.15" fill="currentColor"/><rect x="15.1" y="0.8" width="2.3" height="5.6" rx="1.15" fill="currentColor"/><rect x="11" y="11.4" width="2.9" height="2.9" rx=".4" fill="currentColor"/><rect x="15.6" y="11.4" width="2.9" height="2.9" rx=".4" fill="currentColor"/><rect x="6.4" y="16.2" width="2.9" height="2.9" rx=".4" fill="currentColor"/><rect x="11" y="16.2" width="2.9" height="2.9" rx=".4" fill="currentColor"/><rect x="15.6" y="16.2" width="2.9" height="2.9" rx=".4" fill="currentColor"/></svg>
       </button>
-      <button id="prev" type="button" title="이전 달" aria-label="이전 달">←</button>
-      <button id="next" type="button" title="다음 달" aria-label="다음 달">→</button>
       <button id="menu" type="button" title="설정" aria-label="설정">☰</button>
     </div>
   </header>

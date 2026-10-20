@@ -106,9 +106,8 @@ applyMode();
 mobileMQ.addEventListener("change", () => { applyMode(); render(); });
 
 function render() {
-  $("title").textContent = isMobile()
-    ? `${today.getMonth() + 1}/${today.getDate()}(${WD[today.getDay()][0]})`
-    : `오늘은 ${today.getFullYear()}년${today.getMonth() + 1}월${today.getDate()}일 ${WD[today.getDay()]}`;
+  // 제목은 '지금 보고 있는 달' — 이전/다음으로 이동해도 어느 달인지 바로 보이게
+  $("title").textContent = `${view.getFullYear()}년 ${view.getMonth() + 1}월`;
   const g = $("grid");
   const start = new Date(view); start.setDate(1 - view.getDay());
   const last = new Date(view.getFullYear(), view.getMonth() + 1, 0);
