@@ -19,7 +19,11 @@
   <header class="top">
     <div class="mon">
       <button id="prev" type="button" title="이전 달" aria-label="이전 달">←</button>
-      <span id="title"></span>
+      <button id="title" type="button" title="년·월 선택" aria-haspopup="dialog" aria-expanded="false"></button>
+      <div class="mpick" id="mpick" role="dialog" aria-label="년·월 선택" hidden>
+        <div class="yrs" id="pickYears"></div>
+        <div class="mons" id="pickMonths"></div>
+      </div>
       <button id="next" type="button" title="다음 달" aria-label="다음 달">→</button>
     </div>
     <div class="nav">

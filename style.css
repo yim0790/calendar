@@ -27,9 +27,28 @@ body{
 .top{flex:none;display:flex;align-items:center;justify-content:center;position:relative;height:36px;font-size:13px;-webkit-app-region:drag}
 .top .nav{position:absolute;right:8px;display:flex;gap:4px;-webkit-app-region:no-drag}
 /* 가운데: [이전달] 2026년 11월 [다음달] — 글자 부분은 창 이동용으로 남겨둠 */
-.top .mon{display:flex;align-items:center;gap:2px}
+.top .mon{display:flex;align-items:center;gap:2px;position:relative}
 .top .mon button{-webkit-app-region:no-drag}
-.top .mon #title{min-width:86px;text-align:center;white-space:nowrap}
+/* 제목은 누르면 년·월 고르는 버튼 — .top button의 28px 정사각 규칙을 덮어씀 */
+.top .mon #title{min-width:92px;width:auto;height:26px;padding:0 8px;font-size:13px;
+  text-align:center;white-space:nowrap;border-radius:4px}
+
+/* 년·월 선택창 */
+.mpick{position:absolute;top:30px;left:50%;transform:translateX(-50%);z-index:24;
+  width:236px;padding:8px;background:#fff;color:#222;border-radius:6px;
+  box-shadow:0 4px 16px rgba(0,0,0,.35);-webkit-app-region:no-drag;user-select:none}
+.mpick[hidden]{display:none}            /* hidden 속성이 위 규칙에 밀리지 않게 */
+/* 연도는 가로 스크롤 대신 격자로 — 7개가 한눈에 보이게 */
+.mpick .yrs{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;max-height:132px;
+  overflow-y:auto;padding-bottom:6px;border-bottom:1px solid #eee;margin-bottom:6px}
+.mpick .mons{display:grid;grid-template-columns:repeat(4,1fr);gap:4px}
+.top .mpick button{width:auto;height:auto;border:1px solid #ddd;background:#fff;color:#222;
+  border-radius:4px;cursor:pointer;font-size:12px;font-family:inherit}
+.top .mpick .yrs button{padding:8px 0}
+.top .mpick .mons button{padding:9px 0}
+.top .mpick button:hover{background:#eef7fd}
+.top .mpick button.on{background:#1aa3e8;border-color:#1aa3e8;color:#fff}
+.top .mpick button.on:hover{background:#1590cf}
 .top button{background:none;border:0;color:var(--text);font-size:15px;width:28px;height:28px;cursor:pointer;border-radius:4px;padding:0;display:flex;align-items:center;justify-content:center}
 .top button:hover{background:rgba(255,255,255,.15)}
 .top .ico{width:18px;height:18px}
@@ -127,7 +146,10 @@ html.desktop.locked .grip{display:none}
 .m-only{display:none}
 .ed-back{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9}
 html.mobile .top{justify-content:center;padding-left:0}
-html.mobile .top .mon #title{min-width:78px;font-size:13px}
+html.mobile .top .mon #title{min-width:84px;height:30px;font-size:14px}
+html.mobile .mpick{width:272px;padding:10px}
+html.mobile .top .mpick .yrs button{padding:11px 0;font-size:14px}
+html.mobile .top .mpick .mons button{padding:12px 0;font-size:14px}
 html.mobile .cell{padding:2px 3px;font-size:11px}
 html.mobile .cell li{touch-action:none}           /* 길게 끌어 옮기기 */
 html.mobile .wd{font-size:11px}

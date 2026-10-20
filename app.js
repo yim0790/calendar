@@ -348,12 +348,61 @@ document.addEventListener("pointercancel", endDrag);
 
 function goMonth(delta) {
   if (editorOpen()) saveEditor();
+  closePick();
   view = new Date(view.getFullYear(), view.getMonth() + delta, 1);
   render();
 }
 $("prev").onclick = () => goMonth(-1);
 $("next").onclick = () => goMonth(1);
-$("today").onclick = () => { if (editorOpen()) saveEditor(); view = new Date(today.getFullYear(), today.getMonth(), 1); render(); };
+
+/* ---------- 제목을 눌러 년·월 바로 선택 (오늘 기준 앞뒤 3년) ---------- */
+const PICK_SPAN = 3;
+const pickOpen = () => !$("mpick").hidden;
+function closePick() {
+  $("mpick").hidden = true;
+  $("title").setAttribute("aria-expanded", "false");
+}
+function buildPick() {
+  // 앞뒤 3년이 기본. 버튼을 눌러 그 밖으로 가 있으면 그 해도 목록에 넣어 '선택된 해'가 보이게 한다
+  const y = today.getFullYear(), v = view.getFullYear();
+  const lo = Math.min(y - PICK_SPAN, v), hi = Math.max(y + PICK_SPAN, v);
+  let ys = "";
+  for (let i = lo; i <= hi; i++) {
+    ys += `<button type="button" data-y="${i}" class="${i === v ? "on" : ""}">${i}</button>`;
+  }
+  $("pickYears").innerHTML = ys;
+  let ms = "";
+  for (let m = 1; m <= 12; m++) {
+    ms += `<button type="button" data-m="${m}" class="${m === view.getMonth() + 1 ? "on" : ""}">${m}월</button>`;
+  }
+  $("pickMonths").innerHTML = ms;
+  const on = $("pickYears").querySelector(".on");
+  if (on) on.scrollIntoView({ block: "nearest", inline: "center" });
+}
+$("title").onclick = () => {
+  if (pickOpen()) { closePick(); return; }
+  if (editorOpen()) saveEditor();
+  $("settings").style.display = "none";
+  buildPick();
+  $("mpick").hidden = false;
+  $("title").setAttribute("aria-expanded", "true");
+};
+$("pickYears").onclick = e => {                 // 연도만 바꾸고 창은 열어 둠 (이어서 월 선택)
+  const b = e.target.closest("button[data-y]");
+  if (!b) return;
+  view = new Date(+b.dataset.y, view.getMonth(), 1);
+  render(); buildPick();
+};
+$("pickMonths").onclick = e => {                // 월을 고르면 이동하고 닫음
+  const b = e.target.closest("button[data-m]");
+  if (!b) return;
+  view = new Date(view.getFullYear(), +b.dataset.m - 1, 1);
+  render(); closePick();
+};
+document.addEventListener("pointerdown", e => {  // 바깥을 누르면 닫기
+  if (pickOpen() && !e.target.closest(".mon")) closePick();
+}, true);
+$("today").onclick = () => { if (editorOpen()) saveEditor(); closePick(); view = new Date(today.getFullYear(), today.getMonth(), 1); render(); };
 
 /* =====================================================================
    7. 설정: 배경색·투명도·글자색 (+ 동기화·계정 자리)
@@ -408,6 +457,7 @@ $("closeSet").onclick = () => ($("settings").style.display = "none");
 function reloadApp() { if (editorOpen()) saveEditor(); setTimeout(() => location.reload(), 300); }
 $("reloadApp").onclick = reloadApp;
 document.addEventListener("keydown", e => {
+  if (e.key === "Escape" && pickOpen()) { e.preventDefault(); closePick(); return; }
   if (e.key === "F5" || (e.ctrlKey && (e.key === "r" || e.key === "R"))) { e.preventDefault(); reloadApp(); }
 });
 $("syncNow").onclick = () => Store.syncNow();
