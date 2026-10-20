@@ -29,8 +29,12 @@ self.addEventListener("fetch", e => {
     return;
   }
   // 우리 앱 파일 → 인터넷 먼저, 실패하면 저장본
+  // cache:"no-cache" = 브라우저 캐시를 건너뛰지 않되 매번 서버에 "바뀌었나" 확인.
+  //   이게 없으면 파일을 새로 올려도 캐시 유효시간(10분 내외) 동안 옛 파일이 나와,
+  //   index.html만 새것이고 app.js·style.css는 옛것인 어긋난 상태가 생긴다. (26.10.20 실제 발생)
+  //   안 바뀐 파일은 304로 끝나므로 트래픽 부담도 거의 없다.
   if (url.origin === self.location.origin) {
-    e.respondWith(fetch(req).then(res => {
+    e.respondWith(fetch(req, { cache: "no-cache" }).then(res => {
       if (res.ok) { const copy = res.clone(); caches.open(CACHE).then(c => c.put(req, copy)); }
       return res;
     }).catch(() => caches.match(req, { ignoreSearch: true }).then(hit => hit || caches.match("./index.html"))));
