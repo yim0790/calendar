@@ -6,7 +6,8 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import {
   initializeFirestore, persistentLocalCache, persistentMultipleTabManager, connectFirestoreEmulator,
-  collection, doc, query, where, documentId, onSnapshot, writeBatch, setDoc, serverTimestamp, waitForPendingWrites
+  collection, doc, query, where, documentId, onSnapshot, writeBatch, setDoc, serverTimestamp, waitForPendingWrites,
+  addDoc, updateDoc, deleteDoc
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 import { firebaseConfig } from "./firebase-config.js";
 
@@ -65,6 +66,12 @@ function errorText(err) {
 let uid = null;
 const userPath = (...p) => [ROOT, uid, ...p].join("/");
 
+/* 메모는 편한메모 앱과 '같은 저장소'를 쓴다 (users/{uid}/memos).
+   달력이 쓴 메모에는 date 항목("YYYY-MM-DD")이 붙고, 달력은 그 항목이 있는 메모만 읽는다.
+   편한메모에서 만든 기존 메모는 date가 없어 달력에 나타나지 않는다.
+   편한메모의 수정은 지정한 항목만 바꾸므로(text·pinned·updated), 거기서 글을 고쳐도 date는 그대로 남는다. */
+const memoPath = (...p) => ["users", uid, "memos", ...p].join("/");
+
 export const Store = {
   configError,
 
@@ -115,6 +122,21 @@ export const Store = {
     }, err => { lastError = errorText(err); emitState(); });
   },
 
+  watchMemos(startKey, endKey, cb) {          // 보이는 기간의 '날짜가 붙은 메모'만
+    const q = query(collection(db, memoPath()),
+      where("date", ">=", startKey), where("date", "<=", endKey));
+    return onSnapshot(q, snap => {
+      const out = {};
+      snap.forEach(d => {
+        const x = d.data();
+        if (typeof x.date === "string" && typeof x.text === "string") {
+          out[x.date] = { id: d.id, text: x.text, created: x.created || 0, pinned: !!x.pinned };
+        }
+      });
+      cb(out);
+    }, err => { lastError = errorText(err); emitState(); });
+  },
+
   /* 저장 — changes = { "YYYY-MM-DD": [항목] (빈 배열이면 삭제) }, 여러 날짜를 한 번에 */
   saveDays(changes) {
     const batch = writeBatch(db);
@@ -128,6 +150,24 @@ export const Store = {
   saveHolidays(year, days) {                  // PC 위젯이 받은 공휴일 저장
     return track(setDoc(doc(db, userPath("holidays", String(year))), { days, updatedAt: serverTimestamp() }));
   },
+  /* 메모 저장 — id가 있으면 고치고, 없으면 새로 만든다.
+     고칠 때 date는 건드리지 않는다 (편한메모에서 고쳐도 날짜가 유지되는 것과 같은 방식) */
+  saveMemo(dateKey, text, id) {
+    const now = Date.now();
+    if (id) return track(updateDoc(doc(db, memoPath(id)), { text, updated: now }));
+    return track(addDoc(collection(db, memoPath()), {
+      text, pinned: false, created: now, updated: now, date: dateKey
+    }));
+  },
+  deleteMemo(id) { return track(deleteDoc(doc(db, memoPath(id)))); },
+  // 되돌리기 — 지운 메모를 원래 글·날짜·만든시각 그대로 되살린다 (문서 번호는 새로 생김)
+  restoreMemo(m) {
+    return track(addDoc(collection(db, memoPath()), {
+      text: m.text, pinned: !!m.pinned, created: m.created || Date.now(),
+      updated: Date.now(), date: m.date
+    }));
+  },
+
   saveSettings(s) {
     return track(setDoc(doc(db, userPath("settings", "widget")), { ...s, updatedAt: serverTimestamp() }));
   },

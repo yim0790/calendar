@@ -38,6 +38,11 @@
   <footer class="foot" id="sync"></footer>
   <div class="grip" id="grip" title="크기 조절"></div>
 
+  <!-- 메모 삭제 되돌리기 (편집창과 별개로 뜸) -->
+  <div class="mundo" id="mUndo" hidden>
+    <span id="mUndoMsg"></span><button id="mUndoBtn" type="button">되돌리기</button>
+  </div>
+
   <!-- 로그인 안내 (로그인 전·설정 오류 시 표시) -->
   <div class="login" id="loginBox">
     <div class="card">
@@ -51,6 +56,10 @@
   <div class="editor" id="editor" role="dialog" aria-label="일정 편집">
     <div class="eh"><span id="edate"></span><button id="addLine" class="m-only" type="button">＋ 줄</button><button id="save" type="button" title="저장 (Enter)">✓</button></div>
     <div class="rows" id="rows"></div>
+    <div class="memo" id="memoBox">
+      <label class="lab" for="memo"><span class="ic" aria-hidden="true"></span>메모</label>
+      <textarea id="memo" maxlength="2000" placeholder="이 날짜의 메모 (메모장 앱에서도 보여요)"></textarea>
+    </div>
     <div class="pal" id="pal"></div>
     <div class="undo" id="undoBar"><span id="undoMsg"></span><button id="undoBtn" type="button">되돌리기</button></div>
   </div>

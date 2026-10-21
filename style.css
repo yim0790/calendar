@@ -57,7 +57,7 @@ body{
 .grid{flex:1;display:grid;grid-template-columns:repeat(7,minmax(0,1fr));min-height:0}
 .wd{background:var(--head);text-align:center;font-size:12px;padding:4px 0;border-right:1px solid var(--line)}
 .wd:nth-child(7){border-right:0}
-.cell{border-right:1px solid var(--line);border-top:1px solid var(--line);padding:4px 6px;font-size:12px;cursor:pointer;overflow:hidden;min-height:0}
+.cell{position:relative;border-right:1px solid var(--line);border-top:1px solid var(--line);padding:4px 6px;font-size:12px;cursor:pointer;overflow:hidden;min-height:0}
 .cell:nth-child(7n){border-right:0}
 .cell:hover{background:rgba(255,255,255,.08)}
 .cell.drop{background:rgba(255,255,255,.22)}
@@ -66,6 +66,12 @@ body{
 .cell .hol{color:var(--holiday);margin-left:4px;font-size:11px}
 .cell.other{opacity:.85}
 .cell.today{outline:2px solid var(--today);outline-offset:-2px}
+/* 메모가 있는 날 — 칸 오른쪽 위 작은 쪽지 */
+.cell .mk{position:absolute;top:4px;right:5px;width:11px;height:11px;border-radius:2px;
+  background:rgba(255,255,255,.82);box-shadow:0 0 0 1px rgba(0,0,0,.18)}
+.cell .mk::before,.cell .mk::after{content:"";position:absolute;left:2px;right:2px;height:1px;background:#4a6b86}
+.cell .mk::before{top:3px}
+.cell .mk::after{top:6px}
 .cell ul{margin:3px 0 0;padding-left:0;list-style:none}
 .cell li{line-height:1.5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:grab;border-radius:2px}
 .cell li:hover{background:rgba(255,255,255,.12)}
@@ -76,10 +82,10 @@ body{
 .foot{flex:none;font-size:11px;color:var(--sub);text-align:right;padding:4px 8px;min-height:22px}
 
 /* 편집창 */
-.editor{position:absolute;width:250px;background:#fff;color:#222;border-radius:4px;box-shadow:0 4px 16px rgba(0,0,0,.35);display:none;z-index:10;user-select:text}
+.editor{position:absolute;width:268px;background:#fff;color:#222;border-radius:4px;box-shadow:0 4px 16px rgba(0,0,0,.35);display:none;z-index:10;user-select:text}
 .editor .eh{display:flex;align-items:center;justify-content:space-between;padding:6px 8px;font-size:12px;border-left:3px solid #1aa3e8;margin:6px 0 0 6px}
 .editor .eh button{border:1px solid #ccc;background:#fff;border-radius:3px;cursor:pointer;width:22px;height:22px}
-.rows{height:180px;overflow-y:auto;padding:4px 6px}
+.rows{height:150px;overflow-y:auto;padding:4px 6px}
 .row{display:flex;align-items:center;gap:3px;margin-bottom:2px}
 .row .sb{width:22px;height:22px;border:1px solid #ddd;background:#f7f7f7;border-radius:3px;cursor:pointer;font-size:12px;padding:0;color:#222}
 .row input[type=text]{flex:1;min-width:0;border:0;border-bottom:1px solid #eee;font:12px "Malgun Gothic",sans-serif;padding:3px 2px;outline:none}
@@ -89,6 +95,28 @@ body{
 .row .cb{width:16px;height:16px;border-radius:50%;border:1px solid #bbb;cursor:pointer;padding:0;flex:none}
 .row .del{width:24px;height:24px;border:0;background:none;color:#b33;cursor:pointer;padding:0;flex:none;border-radius:4px;display:flex;align-items:center;justify-content:center}
 .row .del:hover{background:#fdecec}
+/* 메모 삭제 되돌리기 알림줄 — 달력 아래쪽 가운데 */
+.mundo{position:absolute;left:50%;bottom:28px;transform:translateX(-50%);z-index:28;
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  padding:7px 10px;background:#333;color:#fff;border-radius:5px;font-size:12px;
+  box-shadow:0 3px 12px rgba(0,0,0,.35);white-space:nowrap}
+.mundo[hidden]{display:none}
+.mundo button{border:0;background:#fff;color:#222;border-radius:3px;padding:4px 10px;cursor:pointer;font-size:12px}
+html.mobile .mundo{font-size:14px;padding:10px 12px;bottom:34px}
+html.mobile .mundo button{padding:8px 14px;font-size:14px}
+
+/* 편집창 메모 칸 — 일정(짧은 한 줄) 아래에 긴 글을 적는 자리 */
+.memo{border-top:1px solid #eee;padding:7px 8px 9px}
+.memo[hidden]{display:none}
+.memo .lab{display:flex;align-items:center;gap:5px;font-size:11px;color:#666;margin-bottom:5px}
+.memo .lab .ic{position:relative;width:11px;height:11px;border-radius:2px;background:#dfe6ec;box-shadow:0 0 0 1px #c3ced8}
+.memo .lab .ic::before,.memo .lab .ic::after{content:"";position:absolute;left:2px;right:2px;height:1px;background:#7b93a8}
+.memo .lab .ic::before{top:3px}
+.memo .lab .ic::after{top:6px}
+.memo textarea{width:100%;height:74px;resize:none;border:1px solid #e3e3e3;border-radius:4px;
+  padding:6px 7px;font:12px/1.6 "Malgun Gothic",sans-serif;color:#222;outline:none}
+.memo textarea:focus{border-color:#1aa3e8}
+
 .undo{display:none;align-items:center;justify-content:space-between;gap:8px;margin:0 6px 6px;padding:6px 8px;background:#333;color:#fff;border-radius:4px;font-size:12px}
 .undo button{border:0;background:#fff;color:#222;border-radius:3px;padding:4px 10px;cursor:pointer;font-size:12px}
 .pal{position:absolute;display:none;gap:4px;background:#fff;border:1px solid #ddd;border-radius:4px;padding:4px;box-shadow:0 2px 8px rgba(0,0,0,.25);z-index:30}
@@ -160,7 +188,11 @@ html.mobile .editor .eh span{flex:1}
 html.mobile .m-only{display:inline-block}
 html.mobile .editor .eh button{width:auto;height:36px;min-width:44px;padding:0 12px;font-size:15px;border-radius:6px}
 html.mobile #save{background:#1aa3e8;color:#fff;border-color:#1aa3e8}
-html.mobile .rows{height:auto;max-height:45vh;padding:4px 10px 12px}
+html.mobile .rows{height:auto;max-height:32vh;padding:4px 10px 8px}
+html.mobile .memo{padding:8px 10px 12px}
+html.mobile .memo .lab{font-size:13px}
+html.mobile .memo .lab .ic{width:13px;height:13px}
+html.mobile .memo textarea{height:92px;font-size:15px}
 html.mobile .row{gap:8px;margin-bottom:6px}
 html.mobile .row input[type=text]{font-size:16px;padding:8px 4px}   /* 16px 미만이면 아이폰이 확대함 */
 html.mobile .row .sb{width:36px;height:36px;font-size:16px}

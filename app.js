@@ -40,6 +40,17 @@ function cleanDays(raw) {
   }
   return out;
 }
+function cleanMemos(raw) {               // { "날짜": {id, text, ...} } — 글이 없는 메모는 버린다
+  const out = {};
+  if (raw && typeof raw === "object") {
+    for (const k in raw) {
+      const m = raw[k];
+      if (!isDayKey(k) || !m || typeof m.text !== "string" || !m.text.trim()) continue;
+      out[k] = { id: String(m.id || ""), text: m.text, created: Number(m.created) || 0, pinned: m.pinned === true };
+    }
+  }
+  return out;
+}
 function cleanSettings(raw) {
   const s = { ...DEFAULT_SETTINGS };
   if (raw && HEX.test(raw.bgColor)) s.bgColor = raw.bgColor;
@@ -73,6 +84,7 @@ let days = {};                           // 화면에 보이는 기간의 일정
 let settings = cleanSettings({});
 let holidays = {};
 let user = null;
+let memos = {};                 // { "YYYY-MM-DD": {id, text, created, pinned} } — 편한메모와 같은 저장소
 let lastSavedAt = null;
 let today = new Date();
 let view = new Date(today.getFullYear(), today.getMonth(), 1);
@@ -126,7 +138,8 @@ function render() {
     const items = (days[k] || []).map((it, idx) =>
       `<li class="${it.d ? "done" : ""}" data-i="${idx}"${it.c ? ` style="color:${it.c}"` : ""}><span class="sym">${symHtml(it.s)}</span>${esc(it.t)}</li>`).join("");
     const cls = ["cell", d.getMonth() !== view.getMonth() ? "other" : "", k === tk ? "today" : "", d.getDay() === 0 || d.getDay() === 6 ? "wk" : ""].filter(Boolean).join(" ");
-    html += `<div class="${cls}" data-k="${k}">${label}<ul>${items}</ul></div>`;
+    const mk = memos[k] ? `<span class="mk" title="메모 있음"></span>` : "";
+    html += `<div class="${cls}" data-k="${k}">${label}${mk}<ul>${items}</ul></div>`;
   }
   g.innerHTML = html;
 }
@@ -166,6 +179,7 @@ function openEditor(cell) {
   $("edate").textContent = `${y}년 ${m}월 ${d}일`;
   $("rows").innerHTML = ""; hideUndo();
   (days[editing] || []).forEach(it => addRow(it));
+  $("memo").value = memos[editing] ? memos[editing].text : "";
   const blank = addRow({ s: "•", t: "", d: false, c: "" });
   if (isMobile()) {                          // 폰: 화면 아래 고정 창 + 뒤 배경 누르면 저장·닫기
     ed.style.left = ed.style.top = "";
@@ -175,13 +189,14 @@ function openEditor(cell) {
     return;
   }
   // 칸 옆에 띄우되 위젯 밖으로 나가지 않게
+  // 크기는 재서 쓴다 — 메모 칸이 생기면서 창 크기가 달라져 고정값은 맞지 않음
+  ed.style.display = "block";
   const w = $("widget").getBoundingClientRect(), r = cell.getBoundingClientRect();
-  const W = 250, H = 300;
+  const W = ed.offsetWidth, H = ed.offsetHeight;
   let left = r.right - w.left - 60;
   if (left + W > w.width) left = r.left - w.left - W + 60;
   ed.style.left = Math.max(4, Math.min(left, w.width - W - 4)) + "px";
   ed.style.top = Math.max(40, Math.min(r.top - w.top + 30, w.height - H - 4)) + "px";
-  ed.style.display = "block";
   blank.querySelector("input[type=text]").focus();
 }
 function closeEditor() {
@@ -198,9 +213,32 @@ function saveEditor() {
     c: r.dataset.c || ""
   })).filter(Boolean);
   const k = editing;
+  const memoText = $("memo").value.trim();
   closeEditor();
   const before = JSON.stringify(days[k] || []);
   if (before !== JSON.stringify(items)) persist({ [k]: items });   // 바뀐 것이 있을 때만 저장
+  persistMemo(k, memoText);
+}
+
+/* 메모 저장 — 바뀐 것이 없으면 아무것도 하지 않는다 */
+function persistMemo(k, text) {
+  if (!user) return;
+  if (typeof Store.saveMemo !== "function") return;  // 옛 store.js에서는 메모를 건드리지 않는다
+  const cur = memos[k];
+  if (!cur && !text) return;                       // 원래 없고 지금도 비어 있음
+  if (cur && cur.text === text) return;            // 내용 그대로
+
+  if (cur && !text) {                              // 비우고 저장 → 삭제 (되돌리기 제공)
+    const gone = { ...cur, date: k };
+    delete memos[k]; render();
+    Store.deleteMemo(cur.id).then(ok => { if (ok) { lastSavedAt = new Date(); showSync(); } });
+    showMemoUndo(gone);
+    return;
+  }
+  // 새로 만들거나 고치기 — 화면 먼저 반영
+  memos[k] = { ...(cur || { created: Date.now(), pinned: false }), id: cur ? cur.id : "", text };
+  render();
+  Store.saveMemo(k, text, cur ? cur.id : null).then(ok => { if (ok) { lastSavedAt = new Date(); showSync(); } });
 }
 
 $("save").onclick = saveEditor;
@@ -219,6 +257,24 @@ $("pal").onclick = e => {
   palRow.querySelector("input[type=text]").focus();
 };
 /* 줄 삭제 + 되돌리기 (저장은 ✓/Enter를 눌러야 최종 반영) */
+/* 메모 삭제 되돌리기 — 편집창이 닫힌 뒤에도 보여야 하므로 전용 알림줄을 쓴다 */
+let memoUndo = null, memoUndoTimer = null;
+function showMemoUndo(m) {
+  memoUndo = m;
+  $("mUndoMsg").textContent = `${m.date.slice(5).replace("-", "/")} 메모를 지웠어요`;
+  $("mUndo").hidden = false;
+  clearTimeout(memoUndoTimer);
+  memoUndoTimer = setTimeout(closeMemoUndo, 8000);
+}
+function closeMemoUndo() { clearTimeout(memoUndoTimer); memoUndo = null; $("mUndo").hidden = true; }
+$("mUndoBtn").onclick = () => {
+  if (!memoUndo) return;
+  const m = memoUndo; closeMemoUndo();
+  memos[m.date] = { id: "", text: m.text, created: m.created, pinned: m.pinned };
+  render();
+  Store.restoreMemo(m).then(ok => { if (ok) { lastSavedAt = new Date(); showSync(); } });
+};
+
 let undoData = null, undoTimer = null;
 function showUndo(msg) {
   $("undoMsg").textContent = msg;
@@ -267,6 +323,8 @@ $("rows").addEventListener("change", e => {
 });
 ed.addEventListener("keydown", e => {
   if (e.key === "Escape") { e.preventDefault(); closeEditor(); return; }      // 저장 없이 닫기
+  // 메모칸은 여러 줄이라 Enter가 줄바꿈이어야 한다 (저장은 ✓ 또는 바깥 누르기)
+  if (e.target.id === "memo") return;
   if (e.target.type !== "text") return;
   const row = e.target.closest(".row");
   if (e.key === "Enter") {
@@ -474,19 +532,28 @@ $("loginBtn").onclick = doSignIn;
 /* =====================================================================
    8. 로그인 · 실시간 수신 · 날짜 바뀜 감지
    ===================================================================== */
-let unsubDays = null, unsubSettings = null, unsubHolidays = null, rangeKey = "";
+let unsubDays = null, unsubSettings = null, unsubHolidays = null, unsubMemos = null, rangeKey = "";
 function watchRange(startKey, endKey) {        // 보이는 기간이 바뀔 때만 다시 구독
   if (!user || rangeKey === startKey + endKey) return;
   rangeKey = startKey + endKey;
   if (unsubDays) unsubDays();
+  if (unsubMemos) unsubMemos();
   unsubDays = Store.watchDays(startKey, endKey, incoming => {
     days = cleanDays(incoming);
     if (!editorOpen() && !(drag && drag.on)) render();   // 편집·드래그 중에는 화면을 덮어쓰지 않음
   });
+  // 편한메모 쪽에서 고치거나 지워도 달력에 바로 반영된다
+  // store.js가 아직 옛 버전이면(파일을 하나씩 올리는 중) 메모만 빠지고 달력은 그대로 돈다
+  if (typeof Store.watchMemos === "function") {
+    unsubMemos = Store.watchMemos(startKey, endKey, incoming => {
+      memos = cleanMemos(incoming);
+      if (!editorOpen() && !(drag && drag.on)) render();
+    });
+  }
 }
 function stopWatching() {
-  [unsubDays, unsubSettings, unsubHolidays].forEach(f => f && f());
-  unsubDays = unsubSettings = unsubHolidays = null; rangeKey = "";
+  [unsubDays, unsubSettings, unsubHolidays, unsubMemos].forEach(f => f && f());
+  unsubDays = unsubSettings = unsubHolidays = unsubMemos = null; rangeKey = "";
 }
 async function doSignIn() {
   $("loginMsg").textContent = "로그인 중…";
@@ -575,7 +642,8 @@ if (Store.configError) {                        // 설정값이 잘못되면 여
   Store.onAuth(u => {
     user = u;
     stopWatching();
-    days = {}; holidays = {}; holidayDocs = {}; lastSavedAt = null; lastHolidaySync = 0;
+    days = {}; memos = {}; holidays = {}; holidayDocs = {}; lastSavedAt = null; lastHolidaySync = 0;
+    closeMemoUndo();
     if (!u) { settings = cleanSettings({}); applySettings(); }   // 로그아웃하면 이전 계정 설정 지움
     if (editorOpen()) closeEditor();
     $("accName").textContent = u ? (u.email || "로그인됨") : "로그인 안 됨";
@@ -604,6 +672,9 @@ setInterval(() => {                           // 자정이 지나면 '오늘' �
     if (!editorOpen()) render();
   }
 }, 60 * 1000);
+
+// store.js가 옛 버전이면 메모 칸을 아예 보여주지 않는다 (눌러도 저장이 안 되니까)
+if (typeof Store.saveMemo !== "function") $("memoBox").hidden = true;
 
 applySettings();
 render();
