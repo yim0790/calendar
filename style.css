@@ -154,6 +154,10 @@ html.mobile .mundo button{padding:8px 14px;font-size:14px}
 /* PC 위젯(Electron) 전용 */
 html.desktop, html.desktop body{background:transparent}
 html.desktop .widget{border-radius:8px;overflow:hidden}
+/* 닫기(숨기기) 버튼은 PC 위젯에서만 — 폰·브라우저에는 닫을 창이 없다 */
+.top #close{display:none}
+html.desktop .top #close{display:flex}
+html.desktop .top #close:hover{background:rgba(255,90,90,.55)}
 html.desktop .top{cursor:move}
 html.desktop.locked .top{cursor:default}
 .grip{display:none;position:absolute;right:0;bottom:0;width:18px;height:18px;cursor:nwse-resize;z-index:5;

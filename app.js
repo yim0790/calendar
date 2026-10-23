@@ -597,6 +597,8 @@ async function syncHolidays(force) {
 }
 if (desktop) {
   document.documentElement.classList.add("desktop");
+  // 닫기 = 숨기기. 쓰던 내용이 날아가지 않게 저장부터 하고 숨긴다
+  $("close").onclick = () => { if (editorOpen()) saveEditor(); closeEditor(); closePick(); desktop.hide(); };
   $("deskSection").hidden = false;
   desktop.getState().then(st => {
     document.documentElement.classList.toggle("locked", st.locked);
